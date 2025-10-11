@@ -56,5 +56,6 @@ git commit --amend --no-edit
 - Use the `update_todo_list` tool to manage task status.
 - Follow this workflow for all changes to maintain consistency.
 - Refer to this document for any questions about the Git process.
+- Keep the repository-level [`todo.md`](todo.md:1) file updated after each meaningful set of tasks; ensure it mirrors the `update_todo_list` state and is committed following the Roo-Code Git workflow.
 
 Last Updated: 2025-09-29
