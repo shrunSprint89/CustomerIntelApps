@@ -1,197 +1,121 @@
 # ML / ICP generation pipeline
 
 Purpose
-This document describes the ML and retrieval pipeline used to generate evidence-backed Ideal Customer Profiles (ICPs), the tradeoffs for the MVP, and operational requirements.
+This document now describes a two-stage approach for the ICP generator: Phase 1 (Model-only generation) and Phase 2 (Retrieval-Augmented Generation — RAG). The project will deliver Phase 1 quickly by relying on the model's parametric knowledge and strong prompt engineering; Phase 2 will add ingestion, embeddings and vector search to ground outputs in evidence.
 
 Scope
-- Ingestion and indexing of sources
-- Embedding generation and vector store usage
-- Retrieval-augmented generation (RAG) and prompt design
-- Provenance mapping and PDF export
+- Phase 1: prompt-driven model-only ICP generation and validation
+- Phase 2: ingestion, indexing, retrieval (RAG), and provenance mapping
+- Post-processing, provenance assembly (Phase 2), PDF export
 - Monitoring, evaluation and cost-control
 
 Goals
-- Produce ICPs with source-backed claims and low hallucination risk
-- Keep inference costs predictable under the target budget (< $1,000/mo)
-- Make the pipeline modular so LLM and vector providers can be swapped (OpenAI / OpenRouter / Pinecone / pgvector)
+- Phase 1: deliver a working ICP JSON generator (model-only) within 30 days to validate product fit and UX.
+- Phase 2: add evidence-backed RAG to reduce hallucinations and provide provenance for each claim.
+- Keep the pipeline modular so LLM and vector providers can be plugged in later.
 
-High-level pipeline components
-1. Source ingestion (crawler / user uploads / partner APIs)
-2. Parsing & chunking (text extraction, metadata)
-3. Embedding generation and upsert
-4. Vector search and retrieval
-5. LLM adapter + RAG prompt execution
-6. Post-processing, provenance assembly and validation
-7. PDF rendering and export
+Phase 1 — Model-only pipeline (fast path)
+High-level components
+1. Input normalization (seed company, short description, website URL)
+2. Prompt assembly (schema-driven prompts with examples)
+3. LLM invocation (managed provider via adapter)
+4. JSON schema validation and lightweight consistency checks
+5. Persist output_json in Postgres and surface in UI
+6. Feedback capture (user edits stored as annotations for future model tuning)
 
-Sequence diagram (Mermaid)
+Sequence diagram (Phase 1)
 ```mermaid
 sequenceDiagram
   participant U as User
+  participant F as Frontend
   participant A as API
   participant Q as Queue
   participant W as Worker
-  participant I as Ingestor
-  participant E as EmbeddingSvc
-  participant V as VectorDB
-  participant R as Retriever
   participant L as LLMAdapter
   participant S as Postgres
-  participant P as PDFGen
 
-  U->>A: Request ICP generation (seed inputs)
-  A->>S: create icp_report (queued)
-  A->>Q: enqueue(icp_report_id)
-  Q->>W: job delivered
-  W->>I: fetch candidate sources (web + user uploads)
-  I->>W: returned documents
-  W->>E: batch-embed documents
-  E->>V: upsert embeddings
-  W->>R: retrieve top-k snippets
-  R->>L: provide snippets + prompt
-  L->>W: return structured ICP + provenance
-  W->>S: store results, update status ready
-  W->>P: render PDF (optional)
-  P->>S: upload pdf_url
+  U->>F: Request ICP generation (seed inputs)
+  F->>A: POST /generate (projectId, inputs)
+  A->>S: create icp_report (status: queued)
+  A->>Q: enqueue job (icp_report_id)
+  A-->>F: 202 Accepted (job queued)
+  Q->>W: deliver job
+  W->>L: call LLM with structured prompt (model-only)
+  L->>W: return structured ICP JSON
+  W->>S: store icp_report output_json, update status: ready
   W->>A: notify completion
-  A->>U: user sees report
+  A->>F: user sees JSON result
 ```
 
-Ingestion & safe sources
-- Start with a curated safe list of domains and partner APIs (e.g., industry reports, company sites, top tech blogs) to limit noise in MVP.
-- Support user-supplied documents (PDF, Google Doc link, Notion export) with explicit consent for processing.
-- Store raw HTML and extracted text in object storage (Supabase Storage or S3) and keep a reference id in Postgres for traceability.
-- Implement a rate-limited crawler and respect robots.txt and site TOS.
+Key design points (Phase 1)
+- Prompt engineering is critical: use system instructions and few-shot examples to enforce JSON structure and conservative assertions.
+- Output validation: run JSON schema validation and lightweight heuristics to detect obvious hallucinations (e.g., claims with no supporting rationale in the prompt).
+- Feedback loop: allow users to edit generated JSON; capture edits and use them as training signals for Phase 2 evaluation and prompt improvements.
+- Cost control: monitor token usage per run and apply quotas or warn users for expensive operations.
 
-Parsing & chunking
-- Extract visible text, metadata (title, author, published_at), and language.
-- Normalize whitespace, remove boilerplate (nav, footer) using heuristics or libraries (Readability, Mercury parser, boilerpipe).
-- Chunk strategy:
-  - Target chunk size: ~500 tokens (~300–700 words) with 50–20% overlap for context
-  - Include metadata per chunk: source_url, start_offset, end_offset, domain, language
-- Deduplicate identical chunks before embedding to save costs.
+Phase 1 prompt template guidelines
+- Provide a strict instruction to output only the requested JSON fields and nothing else.
+- Include a "confidence" field where the model estimates confidence (for user-facing flags).
+- Example system instruction: "You are an evidence-aware marketing strategist. Produce a JSON ICP with fields: segment, persona, jobs_to_be_done, goals, problems, channels. If you cannot be confident about a claim, set confidence to 'low' and don't invent external facts."
 
-Embedding generation
-- Provider: OpenAI embeddings (text-embedding-3-large) for MVP; abstract via adapter to switch to alternatives via OpenRouter.
-- Batch embeddings (up to provider limits) to reduce cost and latency.
-- Cache embeddings for identical chunk hash (SHA256) to avoid recompute.
-- Upsert with metadata to Pinecone (namespace per tenant or shared namespace + tenant metadata).
-- Store embedding provenance mapping in Postgres: chunk_id -> vector_id, source_url, saved_at.
+Validation & QA (Phase 1)
+- Build unit tests and sample inputs with expected schema shapes.
+- Manual review: Senior Engineer inspects initial runs and approves prompt variants.
+- Record token usage and estimate cost per run in `icp_reports.token_usage`.
 
-Vector DB & indexing
-- Use Pinecone for managed vector operations (scoring, metadata filtering, namespaces).
-- Namespace strategy:
-  - MVP: shared namespace with tenant filter metadata (simpler, lower ops)
-  - Enterprise option: per-tenant namespace for stronger isolation
-- Index tuning:
-  - Distance metric: cosine or dot product depending on embedding provider
-  - Top-K defaults: retrieve top-50 candidates, rerank to top-5 for prompt
+Phase 2 — RAG pipeline (deferred)
+Overview
+Phase 2 will introduce ingestion, chunking, embeddings, a vector store, and a retrieval layer to ground model outputs in external evidence and provide provenance for every claim. The existing RAG design in previous drafts is retained but marked for Phase 2 implementation.
 
-Retrieval & reranking
-- Hybrid retrieval strategy recommended:
-  1) Vector search to get semantically similar chunks (top-50)
-  2) Optional lightweight BM25/title filters to prefer exact matches on company names, locations, or keywords
-  3) Rerank top candidates using a small cross-encoder or LLM reranker prompt (costly — use sparingly)
-- For MVP: use plain vector top-20 then send top-5 snippets to LLM with context windows.
+High-level Phase 2 components
+1. Source ingestion (crawlers, public corpora, user uploads)
+2. Parsing & chunking (text extraction, metadata)
+3. Embedding generation and upsert (embeddings provider)
+4. Vector search & retrieval (vector DB like Pinecone or pgvector)
+5. Reranking & snippet selection
+6. LLM RAG prompt execution with explicit snippets
+7. Provenance mapping and UI for source editing
+8. PDF export with sources appendix
 
-Prompt templates & LLM adapter
-- Use an adapter pattern for LLM/embedding calls: [`docs/archDecisions/architecture.md`](docs/archDecisions/architecture.md:1) describes the architecture around this.
-- Prompt design principles:
-  - Provide explicit instructions to produce structured JSON matching the ICP schema.
-  - Include retrieved snippets with explicit citations (e.g., [S1], [S2]) and their source_url.
-  - Instruct model to only assert claims supported by snippets. If no supporting evidence, return "insufficient_evidence" for that claim.
-  - Limit internal chain-of-thought; ask for concise, actionable outputs.
-- Example prompt skeleton:
-  - System: "You are an evidence-first marketing strategist. Use the provided snippets and produce a JSON ICP with fields: segment, persona, jobs, goals, problems, channels, sources. For each claim, include 'evidence' array with snippet IDs and urls."
-- Adapter responsibilities:
-  - Rate-limit and retry provider calls
-  - Implement batching for embeddings
-  - Record costs per request and attach usage metadata to job logs
+Phase 2 rationale (brief)
+- RAG reduces hallucination by forcing the LLM to ground claims in retrieved snippets.
+- Provenance improves trust and enables users to verify/modify the evidence before exporting.
+- RAG adds infra complexity and cost (vector DB, indexing, crawler), so it is scheduled after validating the core product in Phase 1.
 
-Output schema and provenance
-- Structured JSON output should conform to an explicit schema (example below).
-- Every top-level claim must include a provenance array of {source_url, snippet_text, retrieval_score, chunk_id}.
-- Example minimal JSON schema excerpt:
-  {
-    "segment": "Emerging-Market Digital Nomads (India, Nigeria...)",
-    "persona": {
-      "name": "Rahul",
-      "age_range": "27–36",
-      "jobs_to_be_done": [...],
-      "evidence": [
-        {"source_url":"https://example.com/article","snippet_id":"s_1234","retrieval_score":0.83}
-      ]
-    }
-  }
+Phase 2 sequence diagram (abbreviated)
+```mermaid
+sequenceDiagram
+  participant W as Worker
+  participant V as VectorDB
+  participant E as EmbeddingSvc
+  participant L as LLMAdapter
+  participant S as Postgres
 
-Post-processing & validation
-- Validate JSON against schema; reject or flag outputs failing required fields.
-- Deduplicate evidence (normalize URLs, collapse multiple identical snippets).
-- Compute confidence score heuristics based on retrieval scores and snippet counts.
-- Allow human edits in UI; record edits as feedback signals (store diff and user_id).
+  W->>E: batch-embed documents
+  E->>V: upsert embeddings
+  W->>V: retrieve top-k snippets
+  W->>L: call LLM with snippets + prompt
+  L->>W: return structured ICP + provenance
+  W->>S: persist output + provenance
+```
 
-PDF rendering & export
-- Convert canonical JSON -> HTML template -> Puppeteer PDF
-- Include "Sources" section with full citations and short snippets
-- Embed traceability mapping in JSON and optionally as an appendix in the PDF
-- Generate signed short-lived download URLs for distribution (`/reports/:id/download` -> signed URL)
+Security & privacy (notes)
+- Phase 1: do not send private PII to LLM providers unless explicit consent is captured.
+- Phase 2: for user-uploaded private documents, require explicit opt-in to process and keep options to exclude such documents from training.
 
-Hallucination mitigation strategies
-- RAG grounding as primary defense: always include retrieved snippets in prompt.
-- Conservative prompting: instruct model to mark unsupported claims instead of inventing facts.
-- Source thresholding: require minimum evidence count or average retrieval score to surface high-confidence claims.
-- Human-in-the-loop: surface low-confidence claims in UI for manual verification before export.
-- Automated hallucination detection: heuristics to flag claims mentioning dates/metrics that don't appear in retrieved sources.
+Cost & performance considerations
+- Phase 1: cost dominated by LLM calls; optimize prompts and throttle heavy runs.
+- Phase 2: additional costs from embeddings and vector DB operations; introduce batching, caching, and tiered retrieval modes.
 
-Evaluation & continuous improvement
-- Metrics to track:
-  - Retrieval recall@k (against ground truth test set)
-  - Hallucination rate (human-rated sample)
-  - Generation latency and cost per report
-  - User satisfaction (NPS, feedback on claims)
-- Build a test corpus of real ICP examples (anonymized) to benchmark retrieval + generation.
-- Capture training signals: user edits, source additions, manual verifications.
+Evaluation & readiness criteria for Phase 2
+- Validate Phase 1 outputs against a human-reviewed corpus and ensure quality baseline.
+- Prepare ingestion and deduplication tooling; seed a small curated corpus to pilot retrieval.
+- Implement vector adapter (pgvector and/or Pinecone) and migration strategy (see [`docs/archDecisions/vector-store-choice.md`](docs/archDecisions/vector-store-choice.md:1)).
 
-Fine-tuning & advanced model workflows (post-MVP)
-- Option 1: fine-tune a supervised model on curated ICP examples for structured output (costly).
-- Option 2: retrieval-augmented fine-tuning or reinforcement from human edits.
-- For MVP, prefer prompt engineering and retriever improvements before fine-tuning.
-
-Cost control & performance optimizations
-- Cache embeddings and retrieval results for identical queries.
-- Use smaller embedding models where acceptable, or reduce chunk size to reduce tokens.
-- Progressive generation: quick "summary" generation with small context, optional "deep research" paid job with extended retrieval.
-- Meter and quota user usage: warn users when approaching heavy-generation budgets.
-
-Security & tenant isolation
-- Respect tenant data isolation by metadata filters or per-tenant namespaces in Pinecone.
-- Encrypt sensitive storage and never log full private documents; only store sanitized metadata and snippet references.
-- Implement access controls for user-uploaded documents and allow deletion upon user request.
-
-Data retention & compliance
-- Retention policy for raw crawled content and vectors (e.g., default 90 days, configurable).
-- Support data export and deletion for GDPR/CCPA compliance.
-- Log processing consent for user-supplied content and avoid using private content to train models unless explicitly consented.
-
-Scaling & operations
-- Workers: autoscale based on queue length; use concurrency controls to avoid thundering herd on LLM provider.
-- Vector store: monitor QPS and scale Pinecone pod sizes; use cost-aware tiering for older less-accessed vectors.
-- Monitoring: track embedding queue latency, retrieval latency, LLM error rates, cost-per-generation; alert on anomalies.
-
-MVP recommendations (concrete)
-- Use Pinecone + OpenAI embeddings and GPT-4o/other managed models via an adapter.
-- Start with a curated source list and limited crawler to reduce noise and cost.
-- Implement top-20 retrieval + top-5 context to LLM, require explicit evidence mapping in outputs.
-- Offer two generation modes: "fast" (cheap, small retrieval set) and "deep" (paid, larger retrieval + reranking).
-
-Tradeoffs & alternatives
-- Full cross-encoder reranking yields better precision but adds cost and latency.
-- Per-tenant namespaces increase isolation and compliance but increase Pinecone index count and cost.
-- Self-hosted embedding models reduce provider lock-in but increase ops complexity and GPU costs.
-
-Appendices
-- Sample prompt template: stored in code repo under `ml/prompts/icp_v1.json` (refer to implementation).
-- Related docs: [`docs/archDecisions/mvp.md`](docs/archDecisions/mvp.md:1), [`docs/archDecisions/architecture.md`](docs/archDecisions/architecture.md:1), [`docs/Ideal customer profile Nomad Foundr.pdf`](docs/Ideal customer profile Nomad Foundr.pdf:1)
+Appendices & references
+- Prompt template: `ml/prompts/icp_v1.json` (Phase 1)
+- RAG templates and retrieval prompt patterns (Phase 2): archived in `ml/prompts/rag_v1.json`
+- Related docs: [`docs/archDecisions/architecture.md`](docs/archDecisions/architecture.md:1), [`docs/archDecisions/vector-store-choice.md`](docs/archDecisions/vector-store-choice.md:1), [`docs/archDecisions/data-storage.md`](docs/archDecisions/data-storage.md:1)
 
 Owner: Roo (architect)
-Last updated: 2025-10-11
+Last updated: 2025-10-12
