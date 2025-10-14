@@ -42,18 +42,18 @@ Component diagram (Mermaid)
 graph LR
   User[User Browser / Mobile]
   Frontend[Next.js on Vercel]
-  API[API (Node TS) / Vercel or Cloud Run]
+  API[API -Node TS / Vercel or Cloud Run]
   Auth[Supabase Auth]
   Postgres[Supabase Postgres]
   Storage[Supabase Storage / S3]
-  Queue[Redis Queue (BullMQ)]
-  Worker[Worker (Cloud Run / Fargate)]
-  Pinecone[Vector DB (Pinecone)]
-  EmbeddingAPI[Embeddings & LLM Adapter (OpenAI / OpenRouter)]
+  Queue[Redis Queue - BullMQ]
+  Worker[Worker -Cloud Run / Fargate]
+  Pinecone[Vector DB -Pinecone]
+  EmbeddingAPI[Embeddings & LLM Adapter - OpenAI / OpenRouter]
   PDFGen[Puppeteer PDF Worker]
   Payments[Stripe / Razorpay]
   Admin[Admin Dashboard]
-  Observability[Monitoring & Logs (Sentry / Prometheus)]
+  Observability[Monitoring & Logs - Sentry / Prometheus]
 
   User --> Frontend
   Frontend --> API
