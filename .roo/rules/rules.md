@@ -5,15 +5,15 @@ This document outlines the Git workflow to be followed when making changes to th
 
 ## Workflow Steps
 
-### 1. TODO List Management
-- **Always start** changes by updating the TODO list using the `update_todo_list` tool.
-- Mark tasks as completed (`[x]`) as they are finished.
-- Keep the TODO list updated to reflect current progress.
+### 1. Agent mode and repository context checks
+- **Before any analysis or file changes**, switch to the most appropriate Roo agent mode (architect, code, debug, ask, orchestrator) using the `switch_mode` tool.
+- Check the repository-level [`todo.md`](todo.md:1) to understand current context and project state before taking action. Use this to decide the correct next steps.
+- After confirming context and mode, use the `update_todo_list` tool to reflect any immediate plan or changes.
 
-### 2. Initial Commit
-- **At the start** of a set of tasks (for one user prompt), create an initial Git commit.
-- Use a descriptive commit message that summarizes the task set.
-- Example: `git commit -m "Start: [brief description of tasks]"`
+### 2. Commit at completion
+- **At the end** of a logical set of tasks for a single user prompt, create a Git commit summarizing the completed work.
+- Use a descriptive commit message that summarizes the tasks completed and the rationale.
+- If an intermediate WIP commit is required for a long-running or interactive task, clearly label it as WIP and prefer to squash or amend it into the final commit when the set is complete.
 
 ### 3. Amendment Process
 - **For every task** in the TODO list that gets completed, amend the previous commit with the new changes.
@@ -29,22 +29,23 @@ This document outlines the Git workflow to be followed when making changes to th
 ## Example Workflow
 
 ```bash
-# Start with updating TODO list
-# [Use update_todo_list tool to mark tasks]
-
-# Make initial commit
+# 1) Switch to the correct Roo agent mode (architect/code/debug/ask/orchestrator)
+#    [Use the switch_mode tool to set the mode before analysis or file edits]
+#
+# 2) Check repository-level todo.md to understand current context and chosen plan
+#    [Read [`todo.md`](todo.md:1) or confirm update_todo_list state]
+#
+# 3) Update the TODO list with any immediate actions (use update_todo_list)
+#
+# 4) Implement the planned tasks. For each task:
+#      - Perform the work
+#      - Mark the task completed in update_todo_list
+#
+# 5) When the set of logical tasks for this prompt is complete, create the commit:
 git add .
-git commit -m "Start: Implement market data integration"
-
-# After completing first task
-git add .
-git commit --amend --no-edit
-
-# After completing second task
-git add .
-git commit --amend --no-edit
-
-# Continue for each task completion
+git commit -m "Complete: Implement market data integration"
+#
+# 6) If you created interim WIP commits, squash or amend them into the final commit as needed
 ```
 
 ## Best Practices
@@ -56,6 +57,6 @@ git commit --amend --no-edit
 - Use the `update_todo_list` tool to manage task status.
 - Follow this workflow for all changes to maintain consistency.
 - Refer to this document for any questions about the Git process.
-- Keep the repository-level [`todo.md`](todo.md:1) file updated after each meaningful set of tasks; ensure it mirrors the `update_todo_list` state and is committed following the Roo-Code Git workflow.
+- Keep the repository-level [`todo.md`](todo.md:1) file updated after each meaningful set of tasks; ensure it mirrors the `update_todo_list` state. Create a single, descriptive Git commit at the end of each logical set of tasks to capture the completed work.
 
-Last Updated: 2025-09-29
+Last Updated: 2025-10-14
