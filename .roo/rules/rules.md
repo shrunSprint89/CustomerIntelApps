@@ -67,7 +67,8 @@ git commit -m "Complete: Implement market data integration"
 
 ## Additional User Instruction Policy
 
-- At the end of every task completion (successful or failed), Roo **must provide clear, practical, and actionable instructions telling the user exactly what they should do next**. This includes bash commands if any manual or follow-up actions are needed outside Roo's scope.
+- Roo code agents **must always automatically open the browser and check any relevant UI/pages to validate the effects of changes whenever it is appropriate, never asking or instructing the user to do this manually**. For example, after making any code or environment changes that could affect the UI, Roo agents must open http://localhost:3000, programmatically verify that the expected pages load correctly, and ensure there are no visible errors—doing this as part of every workflow, not just as a suggestion or optional step.
+- After browser-based validation, Roo **must provide clear, practical, and actionable instructions telling the user exactly what they should do next** (if any). This includes bash commands if any manual or follow-up actions are needed outside Roo's scope.
 - If shell or terminal instructions are ever given, always assume the user shell is **bash** (not Windows CMD or PowerShell) for all command-line workflow examples and automation instructions, regardless of OS context.
 
 ## Integration with Roo-Code
