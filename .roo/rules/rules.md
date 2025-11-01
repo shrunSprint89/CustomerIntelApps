@@ -5,10 +5,21 @@ This document outlines the Git workflow to be followed when making changes to th
 
 ## Workflow Steps
 
-### 1. Agent mode and repository context checks
-- **Before any analysis or file changes**, switch to the most appropriate Roo agent mode (architect, code, debug, ask, orchestrator) using the `switch_mode` tool.
-- Check the repository-level [`todo.md`](todo.md:1) to understand current context and project state before taking action. Use this to decide the correct next steps.
-- After confirming context and mode, use the `update_todo_list` tool to reflect any immediate plan or changes.
+### 1. Agent Workflow and Planning Cycle
+
+- **Start in Architect Mode:** All user prompts must begin in `architect` mode. This is the designated starting point for planning and task breakdown.
+
+- **Architect Mode Responsibilities:**
+    - Analyze the user prompt to understand the core request.
+    - Review existing context from the [`docs/archDecisions`](docs/archDecisions) folder and the repository-level [`todo.md`](todo.md:1).
+    - Synthesize this information to create a detailed action plan.
+    - Use the `update_todo_list` tool to outline the plan.
+    - Once the plan is approved, switch to the appropriate agent mode (e.g., `code`, `debug`) to execute the first task.
+
+- **Task Execution and Return to Architect:**
+    - The assigned agent executes its designated task.
+    - Upon task completion, the agent **must** switch back to `architect` mode.
+    - The `architect` agent then reviews progress, updates the [`todo.md`](todo.md:1), and plans the next step, ensuring a continuous planning and execution cycle.
 
 ### 2. Commit at completion
 - **At the end** of a logical set of tasks for a single user prompt, create a Git commit summarizing the completed work.
@@ -40,6 +51,7 @@ This document outlines the Git workflow to be followed when making changes to th
 # 4) Implement the planned tasks. For each task:
 #      - Perform the work
 #      - Mark the task completed in update_todo_list
+#      - At the end of each completed or failed task, Roo must give the user actionable bash instructions for any next steps they must perform manually (such as account setup, credential creation, or follow-up actions).
 #
 # 5) When the set of logical tasks for this prompt is complete, create the commit:
 git add .
@@ -53,10 +65,15 @@ git commit -m "Complete: Implement market data integration"
 - **Descriptive Messages**: Use clear commit messages to track progress.
 - **Error Awareness**: Always check for amend failures and address them promptly.
 
+## Additional User Instruction Policy
+
+- At the end of every task completion (successful or failed), Roo **must provide clear, practical, and actionable instructions telling the user exactly what they should do next**. This includes bash commands if any manual or follow-up actions are needed outside Roo's scope.
+- If shell or terminal instructions are ever given, always assume the user shell is **bash** (not Windows CMD or PowerShell) for all command-line workflow examples and automation instructions, regardless of OS context.
+
 ## Integration with Roo-Code
 - Use the `update_todo_list` tool to manage task status.
 - Follow this workflow for all changes to maintain consistency.
 - Refer to this document for any questions about the Git process.
 - Keep the repository-level [`todo.md`](todo.md:1) file updated after each meaningful set of tasks; ensure it mirrors the `update_todo_list` state. Create a single, descriptive Git commit at the end of each logical set of tasks to capture the completed work.
 
-Last Updated: 2025-10-14
+Last Updated: 2025-10-28

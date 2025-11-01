@@ -7,19 +7,19 @@ This document consolidates key cross-cutting concerns for MVP Phase 1, including
 
 ### Scope & Assumptions
 -   **Phase 1 Target:** ~1k MAU, ~1k ICP reports/month (conservative). Budget target: < $1,000/month.
--   **Revised Baseline Stack:** Vercel (frontend with SaaS starter), Supabase (Postgres with `pgvector` + Auth + Storage + Edge Functions + Functions), OpenRouter (LLM + embeddings), Sentry (observability).
+-   **Revised Baseline Stack:** Netlify (frontend with SaaS starter), Supabase (Postgres with `pgvector` + Auth + Storage + Edge Functions + Functions), OpenRouter (LLM + embeddings), Sentry (observability).
 
 ### Cost Categories
 1.  **LLM (Inference & Tokens):** Major cost driver. Leveraging OpenRouter for model selection and cost-effective embeddings.
 2.  **Supabase Core:** Consolidated cost for relational/vector database (`pgvector`), authentication, background workers (Functions), API endpoints (Edge Functions), and object storage.
-3.  **Frontend Hosting (Vercel):** Basic plans are low-cost; scales with CDN egress.
+3.  **Frontend Hosting (Netlify):** Generous free tier; scales with CDN egress.
 4.  **Observability (Sentry):** Costs grow with logs/traces retention; apply sampling.
 5.  **Third-Party Services:** Transactional fees (Stripe, Razorpay, transactional email).
 
 ### Example Phase 1 (Baseline) Estimate — Conservative (Revised)
 -   **LLM Tokens & Embeddings (OpenRouter):** $200 — $700/month.
 -   **Supabase (Consolidated):** $50 — $200/month (replaces Pinecone, Cloud Run, Redis).
--   **Vercel (Frontend):** $0 — $40/month.
+-   **Netlify (Frontend):** $0 (Free Tier) — $19/month (Pro Tier starter).
 -   **Observability (Sentry integrated):** $10 — $100/month.
 -   **Misc & Payment Fees:** $10 — $50/month.
 -   **Total Conservative:** $270 — $1,090/month. Aim for well under $1,000/month with optimization.
@@ -109,7 +109,7 @@ This document consolidates key cross-cutting concerns for MVP Phase 1, including
 ## 4. Infrastructure, Hosting & CI/CD
 
 ### High-Level Topology
--   **Frontend:** Next.js on Vercel (CDN + Edge).
+-   **Frontend:** Next.js on Netlify (CDN + Edge).
 -   **Backend:** Fully Supabase-centric (Edge Functions, Functions, Postgres with `pgvector`, Auth, Storage).
 
 ### Environments & Isolation
@@ -119,12 +119,12 @@ This document consolidates key cross-cutting concerns for MVP Phase 1, including
 ### CI/CD Design (GitHub Actions)
 -   **Monorepo Layout:** `/web` (Next.js), `/supabase` (Edge Functions, Functions).
 -   **Workflows:**
-    -   `pull_request`: Lint, typecheck, unit tests, frontend preview deployments (Vercel).
-    -   `merge to main`: Deploy Next.js to Vercel. Deploy Supabase Functions/Edge Functions via Supabase CLI. Apply Supabase CLI database migrations.
+    -   `pull_request`: Lint, typecheck, unit tests, frontend preview deployments (Netlify).
+    -   `merge to main`: Deploy Next.js to Netlify. Deploy Supabase Functions/Edge Functions via Supabase CLI. Apply Supabase CLI database migrations.
 
 ### Secrets & Configuration Management
 -   **Supabase Secrets:** Primary storage for backend secrets (e.g., OpenRouter API keys).
--   **Vercel Environment Variables:** For frontend-specific environment variables.
+-   **Netlify Environment Variables:** For frontend-specific environment variables.
 -   Local `.env.example`, actual secrets out of source control.
 
 ### Backups & Disaster Recovery

@@ -10,7 +10,7 @@ This document records the high-level architecture, component diagrams, data flow
 - Core technical choices and rationale.
 
 ## Chosen Stack (MVP Phase 1)
-- **Frontend:** Next.js (React + TypeScript) on Vercel, utilizing a SaaS starter template (e.g., shadcn.io/template/nextjs-saas-starter) for rapid development of common SaaS features and an intuitive UI/UX.
+- **Frontend:** Next.js (React + TypeScript) on Netlify, utilizing a SaaS starter template (e.g., shadcn.io/template/nextjs-saas-starter) for rapid development of common SaaS features and an intuitive UI/UX.
 - **Backend (Supabase-centric):**
     - **Supabase Postgres with pgvector:** Central relational database, primary vector store for embeddings, and Postgres-based job queue.
     - **Supabase Auth:** Handles user authentication and authorization.
@@ -20,7 +20,7 @@ This document records the high-level architecture, component diagrams, data flow
 - **Embeddings & LLM:** OpenRouter (via LLM Adapter) for flexible model switching, cost optimization, and both LLM inference and embedding generation.
 
 ## High-Level Component Overview
-- **Client (Browser/Mobile):** Next.js application hosted on Vercel, using a SaaS starter template to bootstrap UI/UX.
+- **Client (Browser/Mobile):** Next.js application hosted on Netlify, using a SaaS starter template to bootstrap UI/UX.
 - **API/Serverless Backend:** Supabase Edge Functions for handling API requests and webhooks.
 - **Relational & Vector Database:** Supabase Postgres with `pgvector` extension for all structured data and vector embeddings.
 - **Background Processes:** Supabase Functions manage all heavy, asynchronous tasks.
@@ -37,7 +37,7 @@ This document records the high-level architecture, component diagrams, data flow
 ```mermaid
 graph LR
   User[User Browser / Mobile]
-  Frontend[Next.js App on Vercel with SaaS Starter]
+  Frontend[Next.js App on Netlify with SaaS Starter]
   AuthSvc[Supabase Auth]
   EdgeFunc[Supabase Edge Functions]
   Postgres[Supabase Postgres + pgvector]
@@ -124,9 +124,9 @@ flowchart TD
 
 ## Component Responsibilities & Rationale
 
-### Frontend (Next.js on Vercel with SaaS Starter)
+### Frontend (Next.js on Netlify with SaaS Starter)
 - **Role:** User interface, data presentation, client-side logic, and integration point for pre-built SaaS features.
-- **Rationale:** Next.js for performance, SEO, and robust application capabilities. SaaS starter template for accelerated development of common SaaS features (auth UI, dashboards, billing). Vercel for zero-config deployment.
+- **Rationale:** Next.js for performance, SEO, and robust application capabilities. SaaS starter template for accelerated development of common SaaS features (auth UI, dashboards, billing). Netlify for a generous free tier and zero-config deployment.
 
 ### Backend (Supabase-centric)
 - **Supabase Edge Functions (API Layer):**
@@ -175,7 +175,7 @@ flowchart TD
 - **Data Governance:** Support for GDPR/CCPA compliance, PII masking, consent management for user data.
 
 ## Continuous Integration & Deployment (CI/CD)
-- **GitHub Actions:** Automates testing, linting, building, and deployment using Vercel for the frontend and Supabase CLI for backend functions and database migrations.
+- **GitHub Actions:** Automates testing, linting, building, and deployment using Netlify for the frontend and Supabase CLI for backend functions and database migrations.
 
 ## References
 - Key architectural choices are detailed in the accompanying `mvp-plan.md` and `cross-cutting-concerns.md` documents.

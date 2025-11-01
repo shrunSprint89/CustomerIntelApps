@@ -16,11 +16,11 @@ This MVP focuses on the core ICP generator functionality, delivering evidence-ba
 ### Sources & Assumptions
 - Primary product reference: https://www.m1-project.com/
 - Example ICP and requirements derived from: [`docs/Ideal customer profile Nomad Foundr.pdf`](docs/Ideal customer profile Nomad Foundr.pdf:1)
-- Preferred stack: Vercel + Supabase, OpenRouter for LLMs, `pgvector` for vector DB.
+- Preferred stack: Netlify + Supabase, OpenRouter for LLMs, `pgvector` for vector DB.
 
 ### MVP Principles
 1.  **Evidence-first:** Every claim must link to source snippets and URLs (provenance), stored in Supabase Postgres.
-2.  **Fast-to-market:** Favor managed services (Supabase ecosystem, Vercel) and SaaS starter templates that reduce ops and accelerate development.
+2.  **Fast-to-market:** Favor managed services (Supabase ecosystem, Netlify) and SaaS starter templates that reduce ops and accelerate development.
 3.  **Cost-aware:** Optimize LLM usage (via OpenRouter) and utilize Supabase `pgvector` to keep costs low.
 4.  **Extensible:** Build adapter layers for swapping LLM providers and maintain modularity for future growth.
 
@@ -210,8 +210,8 @@ Deliver a robust ICP JSON generation pipeline (RAG + OpenRouter LLM) with proven
 - PM provides seed inputs and coordinates beta test cases.
 
 ### 4-Week Plan (High Level)
--   **Week 0 (2–3 days) — Setup & Skeleton:** Provision accounts (Vercel, Supabase, OpenRouter, Stripe/Razorpay). Create monorepo layout (`/web`, `/supabase`, `/infra`). Seed test inputs.
-    -   *Deliverable:* Dev environment set up with Supabase CLI and Vercel connected.
+-   **Week 0 (2–3 days) — Setup & Skeleton:** Provision accounts (Netlify, Supabase, OpenRouter, Stripe/Razorpay). Create monorepo layout (`/web`, `/supabase`, `/infra`). Seed test inputs.
+    -   *Deliverable:* Dev environment set up with Supabase CLI and Netlify connected.
 -   **Week 1 — Core Auth, Project Model, Enqueue (7 days):** Integrate Supabase Auth (SaaS starter UI). Implement Project CRUD (Supabase PostgREST/Edge Functions API + minimal UI). Implement job enqueue via Supabase Edge Function (`jobs` table trigger `Supabase Function`).
     -   *Deliverable:* User can create a project and initiate an ICP generation job.
 -   **Week 2 — Ingestion, Embeddings & RAG (7 days):** Implement source ingestion (`Supabase Function` for web scraping/document upload). Chunking, deduplication, compute embeddings via LLM Adapter (OpenRouter) on `Supabase Function`. Upsert embeddings to Supabase Postgres with `pgvector`. Implement RAG retrieval (`pgvector`), assemble prompt with snippets, and call OpenRouter LLM via adapter on `Supabase Function`.
@@ -274,7 +274,7 @@ Deliver a robust ICP JSON generation pipeline (RAG + OpenRouter LLM) with proven
 7.  **Testing & CI:**
     -   Add unit tests for Supabase Functions/Edge Functions and LLM Adapter.
     -   E2E smoke test: signup -> generate -> retrieve report.
-    -   CI workflow skeleton: `.github/workflows/ci.yml` (for Vercel & Supabase CLI deployments).
+    -   CI workflow skeleton: `.github/workflows/ci.yml` (for Netlify & Supabase CLI deployments).
 
 ### Implementation Tasks (Prioritized)
 

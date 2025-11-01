@@ -1,3 +1,7 @@
 # Ignore the ICP Nomad Founder PDF files
 docs/icp-nomadFounder/
 docs/Ideal customer profile Nomad Foundr.pdf
+
+.env*
+
+.notes*
