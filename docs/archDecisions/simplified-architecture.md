@@ -46,7 +46,7 @@ graph LR
   LLMAdapter[LLM Adapter - OpenRouter]
   Payments[Stripe / Razorpay]
   Admin[Admin Dashboard]
-  Observability[Monitoring & Logs - Sentry / Metrics]
+  Observability[Monitoring & Logs - Signoz]
 
   User --> Frontend
   Frontend --> AuthSvc

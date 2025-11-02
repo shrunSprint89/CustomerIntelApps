@@ -7,19 +7,13 @@ This document outlines the Git workflow to be followed when making changes to th
 
 ### 1. Agent Workflow and Planning Cycle
 
-- **Start in Architect Mode:** All user prompts must begin in `architect` mode. This is the designated starting point for planning and task breakdown.
+- **Start in orchestrator mode:** The workflow must start in `orchestrator` mode. The orchestrator is responsible for analyzing the user prompt, reviewing context, creating the action plan using `update_todo_list`, and delegating tasks to other agents (`code`, `debug`, `architect`).
 
 - **Architect Mode Responsibilities:**
-    - Analyze the user prompt to understand the core request.
-    - Review existing context from the [`docs/archDecisions`](docs/archDecisions) folder and the repository-level [`todo.md`](todo.md:1).
-    - Synthesize this information to create a detailed action plan.
-    - Use the `update_todo_list` tool to outline the plan.
-    - Once the plan is approved, switch to the appropriate agent mode (e.g., `code`, `debug`) to execute the first task.
+    - Focus solely on architectural decisions, documentation (in `docs/archDecisions`), and providing guidance.
 
-- **Task Execution and Return to Architect:**
-    - The assigned agent executes its designated task.
-    - Upon task completion, the agent **must** switch back to `architect` mode.
-    - The `architect` agent then reviews progress, updates the [`todo.md`](todo.md:1), and plans the next step, ensuring a continuous planning and execution cycle.
+- **Task Execution and Return to orchestrator:**
+    - After a task is completed, the agent must return to `orchestrator` mode for progress review and next-step planning.
 
 ### 2. Commit at completion
 - **At the end** of a logical set of tasks for a single user prompt, create a Git commit summarizing the completed work.
@@ -67,12 +61,13 @@ git commit -m "Complete: Implement market data integration"
 
 ## Additional User Instruction Policy
 
-- Roo code agents **must always automatically open the browser and check any relevant UI/pages to validate the effects of changes whenever it is appropriate, never asking or instructing the user to do this manually**. For example, after making any code or environment changes that could affect the UI, Roo agents must open http://localhost:3000, programmatically verify that the expected pages load correctly, and ensure there are no visible errors—doing this as part of every workflow, not just as a suggestion or optional step.
+- Roo code agents **must always use remote debugging to open the browser and check any relevant UI/pages themselves to validate the effects of changes whenever it is appropriate, never asking or instructing the user to do this manually**. For example, after making any code or environment changes that could affect the UI, Roo agents must use remote debugging to open http://localhost:3000, programmatically verify that the expected pages load correctly, and ensure there are no visible errors—doing this as part of every workflow, not just as a suggestion or optional step.
 - After browser-based validation, Roo **must provide clear, practical, and actionable instructions telling the user exactly what they should do next** (if any). This includes bash commands if any manual or follow-up actions are needed outside Roo's scope.
 - If shell or terminal instructions are ever given, always assume the user shell is **bash** (not Windows CMD or PowerShell) for all command-line workflow examples and automation instructions, regardless of OS context.
 
 ## Integration with Roo-Code
 - Use the `update_todo_list` tool to manage task status.
+- The repository-level `todo.md` file must be kept synchronized with the state of the `update_todo_list` tool.
 - Follow this workflow for all changes to maintain consistency.
 - Refer to this document for any questions about the Git process.
 - Keep the repository-level [`todo.md`](todo.md:1) file updated after each meaningful set of tasks; ensure it mirrors the `update_todo_list` state. Create a single, descriptive Git commit at the end of each logical set of tasks to capture the completed work.

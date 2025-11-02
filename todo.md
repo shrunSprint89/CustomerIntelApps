@@ -2,32 +2,60 @@
 
 This repository-level todo mirrors the `update_todo_list` state. Keep it updated after each set of tasks (see [`.roo/rules/rules.md`](.roo/rules/rules.md:1)).
 
-The architecture is defined in `docs/archDecisions` and the plan is to implement the 4-week MVP. After each task is completed, progress should be committed following the workflow in [`.roo/rules/rules.md`](.roo/rules/rules.md:1).
+The current architecture and build plan are fully defined in the [`docs/archDecisions`](docs/archDecisions) folder:
+- [`simplified-architecture.md`](docs/archDecisions/simplified-architecture.md:1): **Supabase-first backend, Next.js SaaS starter frontend, OpenRouter as LLM adapter.** Evidence provenance, quotas, cost-control, and payment adapters (Stripe, Razorpay) are mandatory across all flows.  
+- [`mvp-plan.md`](docs/archDecisions/mvp-plan.md:1): **4-week detailed MVP roadmap, project structure, and functional requirements.** Phased approach with weekwise deliverables and acceptance checklist.
+- [`cross-cutting-concerns.md`](docs/archDecisions/cross-cutting-concerns.md:1): **Cost, observability, CI/CD, and integration requirements.** Focus on Supabase logs, Sentry, quota/rate-limiting, automatable cost controls.
 
-- [x] **Architecture & Planning:** Consolidate legacy plans into the new simplified, Supabase-first architecture.
-  - [x] Finalize `docs/archDecisions/simplified-architecture.md`
-  - [x] Finalize `docs/archDecisions/mvp-plan.md`
-  - [x] Finalize `docs/archDecisions/cross-cutting-concerns.md`
-- [ ] **Week 0: Setup & Skeleton**
-  - [ ] Provision accounts: Vercel, Supabase, OpenRouter, Stripe/Razorpay.
-  - [ ] Create monorepo layout: `/web` (Next.js SaaS starter), `/supabase` (Functions/Edge Functions).
-  - [ ] Establish CI/CD skeleton in GitHub Actions for Vercel and Supabase CLI.
-- [ ] **Week 1: Core Auth & Job Enqueue**
-  - [ ] Implement Supabase Auth using SaaS starter UI.
-  - [ ] Implement Project CRUD via Supabase PostgREST/Edge Functions.
-  - [ ] Implement job enqueue endpoint (`/api/generate_icp`) using a Supabase Edge Function.
-- [ ] **Week 2: RAG Pipeline**
-  - [ ] Implement LLM Adapter (Supabase Function) for OpenRouter.
-  - [ ] Implement source ingestion, chunking, and embedding pipeline (Supabase Function).
-  - [ ] Implement RAG retrieval from `pgvector` and LLM invocation (Supabase Function).
-  - [ ] Persist `icp_reports` and `provenance_mappings` to Supabase Postgres.
-- [ ] **Week 3: Payments, PDF Export & UI**
-  - [ ] Integrate Stripe and Razorpay payments with Supabase Edge Function webhooks.
-  - [ ] Implement PDF export worker (Supabase Function).
-  - [ ] Enhance frontend with a provenance display panel and job status updates.
-- [ ] **Week 4: Testing, Tuning & Stabilization**
-  - [ ] Add unit tests for key Supabase Functions/Edge Functions.
-  - [ ] Develop E2E smoke tests for the core user flow.
-  - [ ] Implement basic token accounting and per-user quotas.
+**Key priorities and changes applied:**
+- All backend (API, workers, DB, object storage, auth) via Supabase; frontend via SaaS starter (Next.js/React/TypeScript).
+- LLM/embeddings via OpenRouter, abstracted by a Supabase Function "LLM Adapter".
+- MVP includes: provenance-first ICP gen, payments (Stripe, Razorpay), PDF export, editable evidence panel, quota/cost controls, and E2E test coverage.
+- Payments/entitlements, evidence, and core flows must work for global (Stripe) and INR/local (Razorpay/UPI).
+- Quotas enforced via Supabase Edge Functions/RLS; job queuing/post-processing fully managed in Supabase Postgres.
 
-Last updated: 2025-10-28 by Roo
+---
+
+## WIP — MVP 4-Week Roadmap
+
+### ✅ Architecture & Planning
+- [x] Consolidate legacy plans into the new simplified Supabase-first architecture.
+- [x] Finalize [`simplified-architecture.md`](docs/archDecisions/simplified-architecture.md:1)
+- [x] Finalize [`mvp-plan.md`](docs/archDecisions/mvp-plan.md:1)
+- [x] Finalize [`cross-cutting-concerns.md`](docs/archDecisions/cross-cutting-concerns.md:1)
+
+### ⏳ Week 0: Setup & Skeleton
+- [ ] Provision accounts: Netlify, Supabase, OpenRouter, Stripe, Razorpay. (Observability will be self-hosted Signoz).
+- [ ] Create monorepo layout: `/web` (Next.js SaaS starter on Netlify), `/supabase` (Supabase Functions/Edge Functions), `/infra` (if needed).
+- [ ] Establish CI/CD skeleton (GitHub Actions for Netlify & Supabase CLI).
+- [ ] Seed representative test inputs.
+
+### ⏳ Week 1: Core Auth, Projects, Enqueue
+- [ ] Implement Supabase Auth using SaaS starter UI.
+- [ ] Implement Project CRUD (Supabase PostgREST + Edge Functions API, minimal UI).
+- [ ] Implement job enqueue endpoint: `/api/generate_icp` (Supabase Edge Function that creates an `icp_report` and enqueues a job in `jobs`).
+- [ ] Create minimal Supabase Function worker (logs/enqueues jobs).
+
+### ⏳ Week 2: Ingestion, Embeddings & RAG Pipeline
+- [ ] Implement ingestion Connectors: direct PDF/DOCX upload & simple Typeform/Tally webhook.
+- [ ] Implement chunking, deduplication, embedding computation using OpenRouter (via LLM Adapter Supabase Function).
+- [ ] Store all data in Supabase Postgres/pgvector: `embeddings_meta`, `icp_reports`, `provenance_mappings`.
+- [ ] Implement RAG retrieval and LLM prompt/response pipeline in worker.
+- [ ] UI: add forms for seed input, basic outputs, and provenance review.
+
+### ⏳ Week 3: Payments, PDF Export, UI Enhancement
+- [ ] Integrate Stripe and Razorpay payments (Edge Function webhooks & frontend flows).
+- [ ] Implement entitlement checking and gating for free/paid users and quota limits.
+- [ ] Implement PDF export (Supabase Function).
+- [ ] Enhance UI: provenance evidence panel, job status updates (Supabase Realtime/polling).
+
+### ⏳ Week 4: Testing, Quotas, E2E & Stabilization
+- [ ] Add unit tests for Supabase Functions/Edge Functions and LLM Adapter.
+- [ ] Add E2E smoke tests for core flows (Playwright).
+- [ ] Implement token usage accounting and per-user quotas via Edge Functions/RLS.
+- [ ] Testing/validation: output schema, provenance mapping, quotas, payments.
+- [ ] Admin minimal dashboard (Supabase/logs).
+
+---
+
+_Last updated: 2025-11-01 by Roo_

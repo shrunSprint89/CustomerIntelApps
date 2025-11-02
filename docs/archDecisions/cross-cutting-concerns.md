@@ -7,20 +7,20 @@ This document consolidates key cross-cutting concerns for MVP Phase 1, including
 
 ### Scope & Assumptions
 -   **Phase 1 Target:** ~1k MAU, ~1k ICP reports/month (conservative). Budget target: < $1,000/month.
--   **Revised Baseline Stack:** Netlify (frontend with SaaS starter), Supabase (Postgres with `pgvector` + Auth + Storage + Edge Functions + Functions), OpenRouter (LLM + embeddings), Sentry (observability).
+-   **Revised Baseline Stack:** Netlify (frontend with SaaS starter), Supabase (Postgres with `pgvector` + Auth + Storage + Edge Functions + Functions), OpenRouter (LLM + embeddings), **Signoz** (self-hosted on Supabase for observability).
 
 ### Cost Categories
 1.  **LLM (Inference & Tokens):** Major cost driver. Leveraging OpenRouter for model selection and cost-effective embeddings.
 2.  **Supabase Core:** Consolidated cost for relational/vector database (`pgvector`), authentication, background workers (Functions), API endpoints (Edge Functions), and object storage.
 3.  **Frontend Hosting (Netlify):** Generous free tier; scales with CDN egress.
-4.  **Observability (Sentry):** Costs grow with logs/traces retention; apply sampling.
+4.  **Observability (Signoz):** Self-hosted on Supabase; costs are primarily related to Supabase resource consumption.
 5.  **Third-Party Services:** Transactional fees (Stripe, Razorpay, transactional email).
 
 ### Example Phase 1 (Baseline) Estimate — Conservative (Revised)
 -   **LLM Tokens & Embeddings (OpenRouter):** $200 — $700/month.
 -   **Supabase (Consolidated):** $50 — $200/month (replaces Pinecone, Cloud Run, Redis).
 -   **Netlify (Frontend):** $0 (Free Tier) — $19/month (Pro Tier starter).
--   **Observability (Sentry integrated):** $10 — $100/month.
+-   **Observability (Signoz on Supabase):** Included in Supabase costs; minimal direct cost for MVP.
 -   **Misc & Payment Fees:** $10 — $50/month.
 -   **Total Conservative:** $270 — $1,090/month. Aim for well under $1,000/month with optimization.
 
@@ -51,7 +51,7 @@ This document consolidates key cross-cutting concerns for MVP Phase 1, including
 -   Alerting, SLOs, dashboards, and runbooks.
 
 ### Observability Pillars (Supabase-centric)
-1.  **Logging:** Structured JSON logs for all services (Edge Functions, Functions, Next.js). Centralized log ingestion (Supabase logs integrated with Sentry), PII masking, request_id propagation.
+1.  **Logging:** Structured JSON logs for all services (Edge Functions, Functions, Next.js). Centralized log ingestion into **Signoz (hosted on Supabase)**, PII masking, request_id propagation.
 2.  **Metrics:** Track performance (e.g., `icp_generation_duration_seconds`), requests (`icp_generation_requests_total`), LLM usage (`llm_request_tokens_total`), queue depth (`worker_job_queue_depth`), `pgvector` query latency.
 3.  **Distributed Tracing (OpenTelemetry):** Instrument critical spans (HTTP, DB queries, LLM calls, PDF rendering) across Next.js and Supabase Functions/Edge Functions. Use W3C Trace Context for propagation.
 4.  **Synthetics & Health Checks:** Basic health endpoints; end-to-end smoke tests for ICP generation.
@@ -63,7 +63,7 @@ This document consolidates key cross-cutting concerns for MVP Phase 1, including
 -   **Correlation:** Generate `request_id` at ingress, propagate through Supabase Functions. Use `trace_id/span_id` for deep correlation.
 
 ### Dashboard & Visualization
--   Use Supabase Analytics or a connected tool (e.g., Grafana) for dashboards: Platform Health, ICP pipeline, LLM usage, Job Queue, DB metrics. Sentry for errors/performance.
+-   Use **Signoz** for dashboards: Platform Health, ICP pipeline, LLM usage, Job Queue, DB metrics, errors, and performance.
 
 ### Runbooks & Incident Handling
 -   Defined runbooks for common incidents: high job queue backlog, LLM provider outage (adapter failover), cost spikes.
